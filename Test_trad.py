@@ -6,7 +6,7 @@ import ruby_ast_translator
 from Naked.toolshed.shell import execute_rb,muterun_rb
 from subprocess import call
 
-name = ["simple","simple_op","simple_list","simple_hash"]
+name = ["simple","simple_op","simple_list","simple_hash","simple_while","mid_while"]
 
 #python3 -c 'import ruby_ast_translator; r = ruby_ast_translator.RubyASTTranslator(); r.Test()'
 s = 0
@@ -46,6 +46,7 @@ if s == len(name):
 			print("Traduction of "+n+" succeeded")
 		else:
 			print("Traduction of "+n+" failed")
+			print(set(y1)-set(y2))
 		print(filecmp.cmp(n+"/"+n+".pseudo.yaml",n+".pseudo.yaml"))
 		f1.close()
 		f2.close()

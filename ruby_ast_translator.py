@@ -66,6 +66,7 @@ PSEUDO_OPS = {
     '<=': '<=',
     '>=': '>=',
     '!=': '!=',
+    
     '%': '%',
 
     'and': 'and',
@@ -74,6 +75,29 @@ PSEUDO_OPS = {
     '&': '&',
     '|': '|',
     '^': '^'
+}
+
+PSEUDO_BINARY_OPS = {
+    '+': '+',
+    '-': '-',
+    '/': '/',
+    '*': '*',
+    '**': '**',
+    
+    
+    '%': '%'
+
+}
+
+PSEUDO_COMPARISON_OPS = {
+
+	'==': '==',
+    '<': '<',
+    '>': '>',
+    '<=': '<=',
+    '>=': '>=',
+    '!=': '!='
+
 }
 
 class RubyASTTranslator:
@@ -93,6 +117,8 @@ class RubyASTTranslator:
 			return self.translate_nested_value(value)
 		elif(value[0] == 'send'):
 			return self.translate_send(value)
+		elif(value[0] == 'while'):
+			return self.translate_while(value)
 			
 	
 	def translate_simple_value(self,value,fr):
@@ -148,16 +174,74 @@ class RubyASTTranslator:
 	def translate_send(self,value):
 		op = value[3]
 		if(op in PSEUDO_OPS): 
-			t = 'binary_op'
-			left = self.ass_store[value[1][2]]
-			right = self.translate_value(value[4])
+			if(op in PSEUDO_BINARY_OPS):
+				t = 'binary_op'
+			else:
+				t = 'comparison'
+			if(len(value[1])>2):
+				left = self.ass_store[value[1][2]]
+			else:
+				left = self.translate_value(value[2])
+			if(len(value[4])>2):
+				right = self.ass_store[value[4][2]]
+			else:
+				right = self.translate_value(value[4])
 		else:
 			return "Operation not recognized"
-		return{'left':left,'op':op,'pseudo_type':left['pseudo_type'],'right':right,'type':t}
+		if t == 'comparison':
+			p_type = 'Boolean'
+		else:
+			p_type = left['pseudo_type']
+		return{'left':left,'op':op,'pseudo_type':p_type,'right':right,'type':t}
+	
+	def translate_while(self,value):
+		i = 1
+		block = []
+		print("ooo")
+		print(value)
+		print(value[1])
+		print(self.translate_value(value[1]))
+		while i<len(value):
+			block = self.translate_assign(value[i])
+			i = i + 1
+		if(not isinstance(block,list)):
+			block = [block]
+		return {'block':block,'pseudo_type':'Void','test':self.translate_value(value[1]),'type':'while_statement'}
+	
+	def translate_assign(self,lv):
+		if(lv[0] == "begin"):
+			i = 1
+			b = []
+			while i<len(lv):
+				b.append(self.translate_assign(lv[i]))
+				i = i + 1
+			return b
+		elif(lv[0] == "lvasgn"):
+			name = lv[2]
+			l_type = lv[3]
+			if(l_type[0] in BUILTIN_TYPES or l_type[0] == "send"):
+				ty = l_type[0]
+			elif(l_type[0] in PSEUDO_OPS):
+				return self.translate_send(lv)
+			else:
+				return "Type not recognized"
+			typ = self.translate_value(l_type)
+			if(ty in BUILTIN_SIMPLE_TYPES):
+				target = {'name':name, 'pseudo_type':BUILTIN_TYPES[ty],'type':'local'}
+			else:
+				if(ty == 'array'):
+					target = {'name':name, 'pseudo_type':typ['pseudo_type'],'type':'local'}
+				elif(ty == 'hash'):
+					target = {'name':name, 'pseudo_type':typ['pseudo_type'],'type':'local'}
+				elif(ty == 'send'):
+					return{'pseudo_type': 'Void','target':typ['left'],'type':'assignment','value':typ}
+				else:
+					target = {}
+			if(target and target['name'] != None):
+				self.ass_store[target['name']]=target
+				return{'pseudo_type': 'Void','target':target,'type':'assignment','value':typ}
 	
 	def translate_lvsagn(self,lv):
-		print("---")
-		print(lv[0])
 		if(lv[0] == "begin"):
 			i = 1
 			while i<len(lv):
@@ -187,6 +271,8 @@ class RubyASTTranslator:
 			if(target and target['name'] != None):
 				self.ass_store[target['name']]=target
 				self.main.append({'pseudo_type': 'Void','target':target,'type':'assignment','value':typ})
+		elif(lv[0] == "while"):
+			self.main.append(self.translate_value(lv))
 		else:
 			return "Not an assignment bloc"
 	
@@ -197,7 +283,7 @@ class RubyASTTranslator:
 		with open(os.path.join(path,rel_path),"r") as fi:
 			source = fi.read()	
 		rast = source.replace('\n','')
-		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%'
+		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!='
 		parenth = pyparsing.nestedExpr('(',')', content = content_ast)
 		print(rast)
 		res = parenth.parseString(rast)

@@ -1,0 +1,18 @@
+(begin
+  (lvasgn :i
+    (int 5))
+  (lvasgn :j
+    (int 8))
+  (while
+    (send
+      (lvar :i) :<
+      (lvar :j))
+    (begin
+      (lvasgn :i
+        (send
+          (lvar :i) :+
+          (int 2)))
+      (lvasgn :j
+        (send
+          (lvar :j) :+
+          (int 1))))))
