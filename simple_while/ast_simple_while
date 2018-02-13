@@ -1,0 +1,11 @@
+(begin
+  (lvasgn :i
+    (int 5))
+  (while
+    (send
+      (lvar :i) :>
+      (int 1))
+    (lvasgn :i
+      (send
+        (lvar :i) :-
+        (int 1)))))

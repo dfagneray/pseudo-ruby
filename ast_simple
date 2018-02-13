@@ -1,0 +1,5 @@
+(begin
+  (lvasgn :a
+    (int 2))
+  (lvasgn :b
+    (int 3)))

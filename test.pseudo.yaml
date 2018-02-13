@@ -1,0 +1,19 @@
+constants: []
+custom_exceptions: []
+definitions: []
+dependencies: []
+main:
+- block:
+  - args:
+    - {name: i, pseudo_type: Int, type: local}
+    function: display
+    namespace: io
+    pseudo_type: Void
+    type: standard_call
+  end: {pseudo_type: Int, type: int, value: 10}
+  index: {name: i, pseudo_type: Int, type: local}
+  pseudo_type: Void
+  start: {pseudo_type: Int, type: int, value: 0}
+  step: {pseudo_type: Int, type: int, value: 1}
+  type: for_range_statement
+type: module

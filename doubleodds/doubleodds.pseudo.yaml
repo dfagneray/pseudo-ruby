@@ -1,0 +1,73 @@
+constants:
+- constant: CONST
+  init: {pseudo_type: Int, type: int, value: 5}
+  pseudo_type: Int
+  type: constant
+custom_exceptions: []
+definitions: []
+dependencies: []
+main:
+- pseudo_type: Void
+  target: {name: c, pseudo_type: Int, type: local}
+  type: assignment
+  value: {pseudo_type: Int, type: int, value: 2}
+- pseudo_type: Void
+  target:
+    name: numbers
+    pseudo_type: [List, Int]
+    type: local
+  type: assignment
+  value:
+    elements:
+    - {pseudo_type: Int, type: int, value: 1}
+    - {pseudo_type: Int, type: int, value: 2}
+    - {pseudo_type: Int, type: int, value: 3}
+    - {pseudo_type: Int, type: int, value: 4}
+    - {pseudo_type: Int, type: int, value: 5}
+    pseudo_type: [List, Int]
+    type: list
+- pseudo_type: Void
+  target:
+    name: doubled_odds
+    pseudo_type: [List, Int]
+    type: local
+  type: assignment
+  value:
+    block:
+    - left: {name: n, pseudo_type: Int, type: local}
+      op: '*'
+      pseudo_type: Int
+      right: {pseudo_type: Int, type: int, value: 2}
+      type: binary_op
+    function: filter_map
+    iterators:
+      iterator: {name: n, pseudo_type: Int, type: local}
+      type: for_iterator
+    pseudo_type: [List, Int]
+    sequences:
+      sequence:
+        name: numbers
+        pseudo_type: [List, Int]
+        type: local
+      type: for_sequence
+    test:
+    - left:
+        left: {name: n, pseudo_type: Int, type: local}
+        op: '%'
+        pseudo_type: Int
+        right: {pseudo_type: Int, type: int, value: 2}
+        type: binary_op
+      op: ==
+      pseudo_type: Boolean
+      right: {pseudo_type: Int, type: int, value: 1}
+      type: comparison
+    type: standard_iterable_call
+- args:
+  - name: doubled_odds
+    pseudo_type: [List, Int]
+    type: local
+  function: display
+  namespace: io
+  pseudo_type: Void
+  type: standard_call
+type: module

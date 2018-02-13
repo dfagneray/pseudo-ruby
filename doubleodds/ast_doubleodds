@@ -1,0 +1,32 @@
+(begin
+  (casgn nil :CONST
+    (int 5))
+  (lvasgn :numbers
+    (array
+      (int 1)
+      (int 2)
+      (int 3)
+      (int 4)
+      (int 5)))
+  (lvasgn :doubled_odds
+    (block
+      (send
+        (block
+          (send
+            (lvar :numbers) :select)
+          (args
+            (procarg0 :n))
+          (send
+            (send
+              (lvar :n) :%
+              (int 2)) :==
+            (int 1))) :map)
+      (args
+        (procarg0 :n))
+      (send
+        (lvar :n) :*
+        (int 2))))
+  (send nil :p
+    (lvar :doubled_odds)))
+    
+s-expression

@@ -1,0 +1,19 @@
+constants: []
+custom_exceptions: []
+definitions: []
+dependencies: []
+main:
+- pseudo_type: Void
+  target:
+    name: a
+    pseudo_type: [List, Int]
+    type: local
+  type: assignment
+  value:
+    elements:
+    - {pseudo_type: Int, type: int, value: 1}
+    - {pseudo_type: Int, type: int, value: 2}
+    - {pseudo_type: Int, type: int, value: 3}
+    pseudo_type: [List, Int]
+    type: list
+type: module

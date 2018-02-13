@@ -1,0 +1,25 @@
+constants: []
+custom_exceptions: []
+definitions: []
+dependencies: []
+main:
+- pseudo_type: Void
+  target:
+    name: h
+    pseudo_type: [Dictionary, Int, Int]
+    type: local
+  type: assignment
+  value:
+    pairs:
+    - key: {pseudo_type: Int, type: int, value: 1}
+      type: pair
+      value: {pseudo_type: Int, type: int, value: 1}
+    - key: {pseudo_type: Int, type: int, value: 2}
+      type: pair
+      value: {pseudo_type: Int, type: int, value: 2}
+    - key: {pseudo_type: Int, type: int, value: 3}
+      type: pair
+      value: {pseudo_type: Int, type: int, value: 3}
+    pseudo_type: [Dictionary, Int, Int]
+    type: dictionary
+type: module
