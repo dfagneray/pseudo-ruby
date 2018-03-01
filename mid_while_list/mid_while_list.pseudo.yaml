@@ -1,0 +1,86 @@
+constants: []
+custom_exceptions: []
+definitions: []
+dependencies: []
+main:
+- pseudo_type: Void
+  target:
+    name: l
+    pseudo_type: [List, Int]
+    type: local
+  type: assignment
+  value:
+    elements:
+    - {pseudo_type: Int, type: int, value: 1}
+    - {pseudo_type: Int, type: int, value: 2}
+    - {pseudo_type: Int, type: int, value: 3}
+    - {pseudo_type: Int, type: int, value: 4}
+    - {pseudo_type: Int, type: int, value: 5}
+    pseudo_type: [List, Int]
+    type: list
+- pseudo_type: Void
+  target: {name: i, pseudo_type: Int, type: local}
+  type: assignment
+  value: {pseudo_type: Int, type: int, value: 0}
+- pseudo_type: Void
+  target:
+    name: b
+    pseudo_type: [List, Int]
+    type: local
+  type: assignment
+  value:
+    elements: []
+    pseudo_type: [List, Int]
+    type: list
+- block:
+  - pseudo_type: Void
+    target: {name: a, pseudo_type: Int, type: local}
+    type: assignment
+    value:
+      left: {name: i, pseudo_type: Int, type: local}
+      op: '*'
+      pseudo_type: Int
+      right:
+        index: {name: i, pseudo_type: Int, type: local}
+        pseudo_type: Int
+        sequence:
+          name: l
+          pseudo_type: [List, Int]
+          type: local
+        type: index
+      type: binary_op
+  - args:
+    - {name: a, pseudo_type: Int, type: local}
+    message: push
+    pseudo_type: Void
+    receiver:
+      name: b
+      pseudo_type: [List, Int]
+      type: local
+    type: standard_method_call
+  - pseudo_type: Void
+    target: {name: i, pseudo_type: Int, type: local}
+    type: assignment
+    value:
+      left: {name: i, pseudo_type: Int, type: local}
+      op: +
+      pseudo_type: Int
+      right: {pseudo_type: Int, type: int, value: 1}
+      type: binary_op
+  pseudo_type: Void
+  test:
+    left: {name: i, pseudo_type: Int, type: local}
+    op: <
+    pseudo_type: Boolean
+    right:
+      args: []
+      message: length
+      pseudo_type: Int
+      receiver:
+        name: l
+        pseudo_type: [List, Int]
+        type: local
+      type: standard_method_call
+    type: comparison
+  type: while_statement
+type: module

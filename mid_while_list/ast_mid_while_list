@@ -1,0 +1,29 @@
+(begin
+  (lvasgn :l
+    (array
+      (int 1)
+      (int 2)
+      (int 3)
+      (int 4)
+      (int 5)))
+  (lvasgn :i
+    (int 0))
+  (lvasgn :b
+    (array))
+  (while
+    (send
+      (lvar :i) :<
+      (send
+        (lvar :l) :length))
+    (begin
+      (send
+        (lvar :b) :push
+        (send
+          (lvar :i) :*
+          (send
+            (lvar :l) :[]
+            (lvar :i))))
+      (lvasgn :i
+        (send
+          (lvar :i) :+
+          (int 1))))))

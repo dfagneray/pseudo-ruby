@@ -1,0 +1,20 @@
+(begin
+  (lvasgn :a
+    (array
+      (int 1)
+      (int 2)
+      (int 3)
+      (int 4)
+      (int 5)))
+  (lvasgn :b
+    (int 0))
+  (for
+    (lvasgn :i)
+    (send nil :a
+      (hash
+        (pair
+          (sym :do)
+          (lvasgn :b
+            (send
+              (lvar :b) :+
+              (lvar :i)))))) nil))

@@ -119,9 +119,14 @@ class RubyASTTranslator:
 			return self.translate_send(value)
 		elif(value[0] == 'while'):
 			return self.translate_while(value)
+		elif(value[0] == 'for'):
+			if("irange" in value[2]):
+				return self.translate_for_range(value)
+			else:
+				return self.translate_for(value)
 			
 	
-	def translate_simple_value(self,value,fr):
+	def translate_simple_value(self,value,fr=None):
 		if(fr == "array" or fr == "hash"):
 			if(value[0] == 'int'):
 				return [BUILTIN_TYPES[value[0]],{'pseudo_type':BUILTIN_TYPES[value[0]],'type':value[0],'value':int(value[1])}]
@@ -180,10 +185,14 @@ class RubyASTTranslator:
 				t = 'comparison'
 			if(len(value[1])>2):
 				left = self.ass_store[value[1][2]]
+				if(left == None):
+					return "Variable not assigned"
 			else:
 				left = self.translate_value(value[2])
 			if(len(value[4])>2):
 				right = self.ass_store[value[4][2]]
+				if(right == None):
+					return "Variable not assigned"
 			else:
 				right = self.translate_value(value[4])
 		else:
@@ -197,16 +206,31 @@ class RubyASTTranslator:
 	def translate_while(self,value):
 		i = 1
 		block = []
-		print("ooo")
-		print(value)
-		print(value[1])
-		print(self.translate_value(value[1]))
 		while i<len(value):
 			block = self.translate_assign(value[i])
 			i = i + 1
 		if(not isinstance(block,list)):
 			block = [block]
 		return {'block':block,'pseudo_type':'Void','test':self.translate_value(value[1]),'type':'while_statement'}
+	def translate_for_range(self,value):
+		i = 1
+		block = []
+		while i < len(value):
+			block.append(self.translate_assign(value[i]))
+			i = i + 1
+		if(not isinstance(block,list)):
+			block = [block]
+		return {'block':block[2:],'end':block[1][0],'index':block[0],'step':block[1][2],'start':block[1][1],'pseudo_type':'Void','type':'for_range_statement'}
+		
+	def translate_for(self,value):
+		i = 1
+		block = []
+		while i < len(value):
+			block.append(self.translate_assign(value[i]))
+			i = i + 1
+		if(not isinstance(block,list)):
+			block = [block]#todo:check structure of ast_simple_for_each
+		return {'block':block,'iterators':None,'pseudo_type':'Void','sequences':None,'type':'for_statement'}
 	
 	def translate_assign(self,lv):
 		if(lv[0] == "begin"):
@@ -217,6 +241,8 @@ class RubyASTTranslator:
 				i = i + 1
 			return b
 		elif(lv[0] == "lvasgn"):
+			if(len(lv)==3):
+				return {'name':lv[2], 'pseudo_type':'Int','type':'local'}
 			name = lv[2]
 			l_type = lv[3]
 			if(l_type[0] in BUILTIN_TYPES or l_type[0] == "send"):
@@ -240,7 +266,9 @@ class RubyASTTranslator:
 			if(target and target['name'] != None):
 				self.ass_store[target['name']]=target
 				return{'pseudo_type': 'Void','target':target,'type':'assignment','value':typ}
-	
+		elif(lv[0] == "irange"):
+			return [self.translate_simple_value(lv[2]),self.translate_simple_value(lv[1]),self.translate_simple_value(['int','1'])]
+			
 	def translate_lvsagn(self,lv):
 		if(lv[0] == "begin"):
 			i = 1
@@ -272,6 +300,8 @@ class RubyASTTranslator:
 				self.ass_store[target['name']]=target
 				self.main.append({'pseudo_type': 'Void','target':target,'type':'assignment','value':typ})
 		elif(lv[0] == "while"):
+			self.main.append(self.translate_value(lv))
+		elif(lv[0] == 'for'):
 			self.main.append(self.translate_value(lv))
 		else:
 			return "Not an assignment bloc"

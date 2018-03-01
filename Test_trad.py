@@ -6,7 +6,7 @@ import ruby_ast_translator
 from Naked.toolshed.shell import execute_rb,muterun_rb
 from subprocess import call
 
-name = ["simple","simple_op","simple_list","simple_hash","simple_while","mid_while"]
+name = ["simple","simple_op","simple_list","simple_hash","simple_while","mid_while","simple_for","simple_for_each"]
 
 #python3 -c 'import ruby_ast_translator; r = ruby_ast_translator.RubyASTTranslator(); r.Test()'
 s = 0

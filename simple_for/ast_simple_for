@@ -1,0 +1,12 @@
+(begin
+  (lvasgn :j
+    (int 0))
+  (for
+    (lvasgn :i)
+    (irange
+      (int 0)
+      (int 3))
+    (lvasgn :j
+      (send
+        (lvar :j) :+
+        (int 1)))))
