@@ -1,0 +1,6 @@
+(lvasgn :i
+  (int 5)):1
+(lvasgn :i
+  (send
+    (lvar :i) :-
+    (int 1))):2

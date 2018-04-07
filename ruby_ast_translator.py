@@ -3,6 +3,7 @@ import sys
 import ast
 import yaml
 import pyparsing
+from errors import PseudoRubyNotTranslatableError, PseudoRubyTypeCheckError, cant_infer_error, translation_error, type_check_error
 
 #python3 -c 'import ruby_ast_translator; r = ruby_ast_translator.RubyASTTranslator(); r.Test()'
 
@@ -109,6 +110,8 @@ class RubyASTTranslator:
 		self.dependencies = []
 		self.main = []
 		self.ass_store = {}
+		self.source_loc = {}
+		self.lines = []
 	
 	def translate_value(self,value):
 		if(value[0] in BUILTIN_SIMPLE_TYPES):
@@ -139,6 +142,23 @@ class RubyASTTranslator:
 				return {'pseudo_type':BUILTIN_TYPES[value[0]],'type':value[0],'value':float(value[1])}
 	def translate_nested_value(self,value):		
 		if(value[0] == 'array'):
+			if(len(value) == 1):
+				print(self.source_loc)
+				loc = self.source_loc[value[0]]
+				print(self.lines[self.source_loc[value[0]][0]]) 
+				meta = self.lines[loc[0]-1]
+				if(meta[:6] == '#META:'):
+					if(meta[6:10] == 'List' and meta[11:] in BUILTIN_SIMPLE_TYPES):
+						return {'type': 'list', 'elements': [], 'pseudo_type': ['List', BUILTIN_SIMPLE_TYPES[meta[11:]]]}
+					elif(meta[6:10] != 'List'):
+						raise type_check_error('You put a meta comment before a list while it doesn\'t seem to concern a list',loc[0], self.lines[loc[0]-1])                
+					elif(meta[11:] not in BUILTIN_SIMPLE_TYPES):
+						raise type_check_error('The hinted type you gave is not supported for lists',loc[0], self.lines[loc[0]-1])
+					else:
+						raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc[0], self.lines[loc[0]])
+				else:
+					raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc[0], self.lines[loc[0]])
+			print(value)
 			elements = []
 			t = ""
 			for i in range(1,len(value)):
@@ -153,7 +173,9 @@ class RubyASTTranslator:
 					if(t != "" and t != test[0]):
 						return "In pseudo-Ruby, arrays can't have differents values"
 					t = test[1]
-					elements.append(test)	
+					elements.append(test)
+			print(elements)
+			print(t)
 			return {'elements':elements,'pseudo_type': [BUILTIN_TYPES[value[0]],BUILTIN_TYPES[t]],'type': EQUALS_BUILTIN_TYPES[value[0]]}
 		elif(value[0] == 'hash'):
 			p,t = self.translate_pairs(value)
@@ -196,7 +218,7 @@ class RubyASTTranslator:
 			else:
 				right = self.translate_value(value[4])
 		else:
-			return "Operation not recognized"
+			return "Operation not recognized: "+op
 		if t == 'comparison':
 			p_type = 'Boolean'
 		else:
@@ -226,22 +248,23 @@ class RubyASTTranslator:
 		i = 1
 		block = []
 		while i < len(value):
-			block.append(self.translate_assign(value[i]))
+			block.append(self.translate_assign(value[i],"for_statement"))
 			i = i + 1
 		if(not isinstance(block,list)):
-			block = [block]#todo:check structure of ast_simple_for_each
-		return {'block':block,'iterators':None,'pseudo_type':'Void','sequences':None,'type':'for_statement'}
+			block = [block]
+		return {'block':[block[1]],'iterators':{'iterator':block[0],'type':'for_iterator'},'pseudo_type':'Void','sequences':{'sequence':self.ass_store[value[2][3]],'type':'for_sequence'},'type':'for_statement'}
 	
-	def translate_assign(self,lv):
+	def translate_assign(self,lv,fr = None):
 		if(lv[0] == "begin"):
 			i = 1
 			b = []
 			while i<len(lv):
-				b.append(self.translate_assign(lv[i]))
+				b.append(self.translate_assign(lv[i],fr))
 				i = i + 1
 			return b
 		elif(lv[0] == "lvasgn"):
 			if(len(lv)==3):
+				self.ass_store[lv[2]]={'name':lv[2], 'pseudo_type':'Int','type':'local'}
 				return {'name':lv[2], 'pseudo_type':'Int','type':'local'}
 			name = lv[2]
 			l_type = lv[3]
@@ -268,6 +291,8 @@ class RubyASTTranslator:
 				return{'pseudo_type': 'Void','target':target,'type':'assignment','value':typ}
 		elif(lv[0] == "irange"):
 			return [self.translate_simple_value(lv[2]),self.translate_simple_value(lv[1]),self.translate_simple_value(['int','1'])]
+		elif(lv[0] == "send" and fr == "for_statement"):
+			return self.translate_assign(lv[4][1][2])
 			
 	def translate_lvsagn(self,lv):
 		if(lv[0] == "begin"):
@@ -293,6 +318,7 @@ class RubyASTTranslator:
 					target = {'name':name, 'pseudo_type':typ['pseudo_type'],'type':'local'}
 				elif(ty == 'send'):
 					target = {}
+					print(typ)
 					self.main.append({'pseudo_type': 'Void','target':typ['left'],'type':'assignment','value':typ})
 				else:
 					target = {}
@@ -308,21 +334,28 @@ class RubyASTTranslator:
 	
 	def Test(self,name):
 		self.translate()
-		rel_path = name+"/ast_"+name
+		rel_ast_path = name+"/ast_"+name
+		rel_source_path = name+"/"+name+".rb"
 		path = os.path.dirname(__file__)
-		with open(os.path.join(path,rel_path),"r") as fi:
-			source = fi.read()	
-		rast = source.replace('\n','')
-		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!='
+		with open(os.path.join(path,rel_ast_path),"r") as fi:
+			ast_source = fi.read()	
+		with open(os.path.join(path,rel_source_path),"r") as fi:
+			source = fi.read()
+		self.lines = source.splitlines()
+		test_path = name+"/map_source_"+name
+		with open(os.path.join(path,test_path),"r") as fi:
+			source_loc = fi.read()
+		self.source_loc = ast.literal_eval(source_loc)
+		rast = ast_source.replace('\n','')
+		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!=' | 'push' | '[' | ']' | 'Array' | 'new' | 'const' | 'length' | 'nil' | '[]' | '*'
 		parenth = pyparsing.nestedExpr('(',')', content = content_ast)
-		print(rast)
+		
 		res = parenth.parseString(rast)
 		res = res.asList()
-		print(len(res))
-		print(res[0])
 		self.main = []
 		self.translate_lvsagn(res[0])
 		print(self.main)
+		print(res)	
 		trad = {'constants':self.constants,'custom_exceptions':self.custom_exceptions,'definitions':self.definitions,'dependencies':self.dependencies,'main':self.main,'type':'module'}
 		fil = open(name + '.pseudo.yaml','w')
 		noaliases = yaml.dumper.SafeDumper

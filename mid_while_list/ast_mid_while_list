@@ -16,13 +16,15 @@
       (send
         (lvar :l) :length))
     (begin
-      (send
-        (lvar :b) :push
+      (lvasgn :a
         (send
           (lvar :i) :*
-          (send
-            (lvar :l) :[]
+          (index
+            (lvar :l)
             (lvar :i))))
+      (send
+        (lvar :b) :push
+        (lvar :a))
       (lvasgn :i
         (send
           (lvar :i) :+

@@ -1,0 +1,4 @@
+(lvasgn :a
+  (int 2)):1
+(lvasgn :b
+  (int 3)):2

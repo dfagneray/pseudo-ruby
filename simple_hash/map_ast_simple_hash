@@ -1,0 +1,10 @@
+(hash
+  (pair
+    (int 1)
+    (int 1))
+  (pair
+    (int 2)
+    (int 2))
+  (pair
+    (int 3)
+    (int 3))):1

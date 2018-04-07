@@ -1,0 +1,16 @@
+(send nil :p
+  (str "hello")):1
+(lvasgn :a
+  (int 2)):2
+(lvasgn :b
+  (int 3)):3
+(lvasgn :c
+  (int 5)):4
+(lvasgn :d
+  (send
+    (lvar :a) :+
+    (lvar :b))):5
+(lvasgn :e
+  (send
+    (lvar :c) :+
+    (lvar :d))):6
