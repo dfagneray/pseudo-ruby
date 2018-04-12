@@ -45,11 +45,12 @@ def browse_acc(node,res,line,column)
 			child = child.delete(')')
 			temp.slice!(child)
 		end
-		res[temp] = node.loc.line
+		res[temp] = "("+node.loc.line.to_s+","+node.loc.column.to_s+")"
 		browse_acc(node.children,res,node.loc.line,node.loc.column)
 	elsif (node.class == Array)
 		node.each do |n|
-			if n.class == Parser::AST::Node
+			if n.class == Parser::AST::Node and n.loc.class != Parser::Source::Map::Collection
+				p n.loc.class
 				temp = {}
 				browse_acc(n,temp,n.loc.line,n.loc.column)
 				res[temp] = "("+n.loc.line.to_s+","+n.loc.column.to_s+")"
@@ -69,13 +70,13 @@ def browse(node)
 end
 
 cur_folder = __dir__
-f ="/simple_while/simple_while.rb"
+f ="/simple_method/simple_method.rb"
 path = cur_folder + f
 code = File.read(path)
 ast = Parser::CurrentRuby.parse(code)
 res = browse(ast)
 res = flatten_hash(res).to_s.gsub! '=>',':'
-map_ast = File.new(cur_folder+"/simple_while/map_source_simple_while","w+")
+map_ast = File.new(cur_folder+"/simple_method/map_source_simple_method","w+")
 map_ast.write(res)
 map_ast.close
 ast_mid_while_list= File.new(cur_folder+"/ast_parse","w")

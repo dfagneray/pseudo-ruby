@@ -68,15 +68,15 @@ browse_acc(node,res,-1,-1)
 return res
 end
 cur_folder = __dir__
-f ="/mid_while.rb"
+f ="/simple_method.rb"
 path = cur_folder + f
 code = File.read(path)
 ast = Parser::CurrentRuby.parse(code)
 res = browse(ast)
 res = flatten_hash(res).to_s.gsub! '=>',':'
-map_ast_mid_while = File.new(cur_folder+"/map_source_mid_while","w")
-map_ast_mid_while.write(res)
-map_ast_mid_while.close
-ast_mid_while= File.new(cur_folder+"/ast_mid_while","w")
-ast_mid_while.write(ast)
-ast_mid_while.close
+map_ast_simple_method = File.new(cur_folder+"/map_source_simple_method","w")
+map_ast_simple_method.write(res)
+map_ast_simple_method.close
+ast_simple_method= File.new(cur_folder+"/ast_simple_method","w")
+ast_simple_method.write(ast)
+ast_simple_method.close

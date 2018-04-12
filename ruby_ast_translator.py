@@ -38,7 +38,9 @@ KEY_TYPES = {'str', 'int', 'float', 'bool'}
 
 PSEUDO_KEY_TYPES = {'String', 'Int', 'Float', 'Bool'}
 
-BUILTIN_FUNCTIONS = {'print', 'input', 'str', 'set', 'int', 'len', 'any', 'all', 'sum'}
+BUILTIN_FUNCTIONS = {'print', 'set', 'int', 'length', 'any', 'all', 'sum','push','index'}
+
+BUILTIN_TYPE_FUNCTIONS = {'length':'Int','push':'Void'}
 
 FORBIDDEN_TOP_LEVEL_FUNCTIONS = {'map', 'filter'}
 
@@ -112,8 +114,13 @@ class RubyASTTranslator:
 		self.ass_store = {}
 		self.source_loc = {}
 		self.lines = []
+		self.keyword = {}
 	
 	def translate_value(self,value):
+		if value[0] in self.keyword:
+			self.keyword[value[0]] = self.keyword[value[0]] + 1
+		else:
+			self.keyword[value[0]] = 0
 		if(value[0] in BUILTIN_SIMPLE_TYPES):
 			return self.translate_simple_value(value,value[0])
 		elif(value[0] == 'array' or value[0] == 'hash'):
@@ -128,7 +135,11 @@ class RubyASTTranslator:
 			else:
 				return self.translate_for(value)
 			
-	
+	def is_terminal(self,value):
+		if(isinstance(value,list) and value[2] in self.ass_store):
+			return True
+		else:
+			return False
 	def translate_simple_value(self,value,fr=None):
 		if(fr == "array" or fr == "hash"):
 			if(value[0] == 'int'):
@@ -143,21 +154,19 @@ class RubyASTTranslator:
 	def translate_nested_value(self,value):		
 		if(value[0] == 'array'):
 			if(len(value) == 1):
-				print(self.source_loc)
-				loc = self.source_loc[value[0]]
-				print(self.lines[self.source_loc[value[0]][0]]) 
-				meta = self.lines[loc[0]-1]
+				loc = ast.literal_eval(self.source_loc[value[0]][self.keyword[value[0]]])
+				meta = self.lines[loc[0]-2]
 				if(meta[:6] == '#META:'):
 					if(meta[6:10] == 'List' and meta[11:] in BUILTIN_SIMPLE_TYPES):
 						return {'type': 'list', 'elements': [], 'pseudo_type': ['List', BUILTIN_SIMPLE_TYPES[meta[11:]]]}
 					elif(meta[6:10] != 'List'):
-						raise type_check_error('You put a meta comment before a list while it doesn\'t seem to concern a list',loc[0], self.lines[loc[0]-1])                
+						raise type_check_error('You put a meta comment before a list while it doesn\'t seem to concern a list',loc, self.lines[loc[0]-2])                
 					elif(meta[11:] not in BUILTIN_SIMPLE_TYPES):
-						raise type_check_error('The hinted type you gave is not supported for lists',loc[0], self.lines[loc[0]-1])
+						raise type_check_error('The hinted type you gave is not supported for lists',loc, self.lines[loc[0]-2])
 					else:
-						raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc[0], self.lines[loc[0]])
+						raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc, self.lines[loc[0]-1])
 				else:
-					raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc[0], self.lines[loc[0]])
+					raise type_check_error('pseudo-ruby needs you to hint the type when declaring empty list, with the syntax #META:List,<type>',loc, self.lines[loc[0]-1])
 			print(value)
 			elements = []
 			t = ""
@@ -165,13 +174,13 @@ class RubyASTTranslator:
 				if(isinstance(self.translate_value(value[i]),dict)):
 					test = self.translate_value(value[i])
 					if(t != "" and t != test['type']):
-						return "In pseudo-Ruby, arrays can't have differents values"
+						raise type_check_error("In pseudo-Ruby, arrays can't have differents values")
 					t = test['type']
 					elements.append(test)
 				else:
 					test = self.translate_value(value[i])
 					if(t != "" and t != test[0]):
-						return "In pseudo-Ruby, arrays can't have differents values"
+						raise type_check_error("In pseudo-Ruby, arrays can't have differents values")
 					t = test[1]
 					elements.append(test)
 			print(elements)
@@ -193,7 +202,7 @@ class RubyASTTranslator:
 			t = ""
 			for j in range(1,len(value[i])):
 				if(t != "" and t != self.translate_value(value[i][j])['type']):
-					return "In pseudo-Ruby, hash can't have differents values"
+					raise type_check_error( "In pseudo-Ruby, hash can't have differents values")
 				t = self.translate_value(value[i][j])['type']
 				pairs[i-1].append(self.translate_value(value[i][j]))
 		return pairs,t			
@@ -208,28 +217,70 @@ class RubyASTTranslator:
 			if(len(value[1])>2):
 				left = self.ass_store[value[1][2]]
 				if(left == None):
-					return "Variable not assigned"
+					raise type_check_error("Variable not assigned")
 			else:
 				left = self.translate_value(value[2])
 			if(len(value[4])>2):
-				right = self.ass_store[value[4][2]]
+				if(isinstance(value[4][2],list)):
+					if(value[4][0] == 'index'):
+						right = self.translate_index(value)
+					else:
+						right = "hello"
+				else:
+					if (value[4][2]) in self.ass_store:
+						right = self.ass_store[value[4][2]]
+					else:
+						right = self.translate_value(value[4])
 				if(right == None):
-					return "Variable not assigned"
+					raise type_check_error("Variable not assigned")
 			else:
 				right = self.translate_value(value[4])
+		elif (op in BUILTIN_FUNCTIONS):
+			if(len(value[1])>2):
+				left = self.ass_store[value[1][2]]
+				if(left == None):
+					raise type_check_error("Variable not assigned")
+			else:
+				left = self.translate_value(value[2])
+			print("hello")
+			print(value)
+			if(self.is_terminal(value[1])):
+				if(op in BUILTIN_TYPE_FUNCTIONS):
+					typ = BUILTIN_TYPE_FUNCTIONS[op]
+				else:
+					typ = self.ass_store[value[1][2]]['pseudo_type'][1]
+				print(typ)
+				print(self.ass_store)
+				if(len(value) < 5):
+					return {'args':[],'message': op,'pseudo_type':typ,'type':'standard_method_call','receiver':self.ass_store[value[1][2]]}
+				else:
+					return {'args':[self.ass_store[value[4][2]]],'message': op,'pseudo_type':typ,'type':'standard_method_call','receiver':self.ass_store[value[1][2]]}
 		else:
-			return "Operation not recognized: "+op
+			raise type_check_error("Operation not recognized: "+op)
 		if t == 'comparison':
 			p_type = 'Boolean'
 		else:
 			p_type = left['pseudo_type']
 		return{'left':left,'op':op,'pseudo_type':p_type,'right':right,'type':t}
 	
+	def translate_index(self,value):
+		index = self.ass_store[value[4][2][2]]
+		ps = index['pseudo_type']
+		sequence = self.ass_store[value[4][1][2]]
+		return {'index':index,'pseudo_type':ps,'sequence':sequence,'type':'index'}
+	
+	def translate_length(self,value):
+		print()
+		
+	
 	def translate_while(self,value):
 		i = 1
 		block = []
 		while i<len(value):
+			print("---")
+			print(value[i])
 			block = self.translate_assign(value[i])
+			print(self.translate_assign(value[i]))
 			i = i + 1
 		if(not isinstance(block,list)):
 			block = [block]
@@ -255,6 +306,10 @@ class RubyASTTranslator:
 		return {'block':[block[1]],'iterators':{'iterator':block[0],'type':'for_iterator'},'pseudo_type':'Void','sequences':{'sequence':self.ass_store[value[2][3]],'type':'for_sequence'},'type':'for_statement'}
 	
 	def translate_assign(self,lv,fr = None):
+		if lv[0] in self.keyword:
+			self.keyword[lv[0]] = self.keyword[lv[0]] + 1
+		else:
+			self.keyword[lv[0]] = 0
 		if(lv[0] == "begin"):
 			i = 1
 			b = []
@@ -264,7 +319,7 @@ class RubyASTTranslator:
 			return b
 		elif(lv[0] == "lvasgn"):
 			if(len(lv)==3):
-				self.ass_store[lv[2]]={'name':lv[2], 'pseudo_type':'Int','type':'local'}
+				self.ass_store[lv[2]]={'name':lv[2], 'pseudo_type':'Int','type':'local'} #Maybe not assume type here..
 				return {'name':lv[2], 'pseudo_type':'Int','type':'local'}
 			name = lv[2]
 			l_type = lv[3]
@@ -273,7 +328,7 @@ class RubyASTTranslator:
 			elif(l_type[0] in PSEUDO_OPS):
 				return self.translate_send(lv)
 			else:
-				return "Type not recognized"
+				raise type_check_error("Type not recognized")
 			typ = self.translate_value(l_type)
 			if(ty in BUILTIN_SIMPLE_TYPES):
 				target = {'name':name, 'pseudo_type':BUILTIN_TYPES[ty],'type':'local'}
@@ -283,7 +338,10 @@ class RubyASTTranslator:
 				elif(ty == 'hash'):
 					target = {'name':name, 'pseudo_type':typ['pseudo_type'],'type':'local'}
 				elif(ty == 'send'):
-					return{'pseudo_type': 'Void','target':typ['left'],'type':'assignment','value':typ}
+					target = {'name':name, 'pseudo_type':typ['pseudo_type'],'type':'local'}
+					if(target and target['name'] != None):
+						self.ass_store[target['name']]=target
+					return{'pseudo_type': 'Void','target':target,'type':'assignment','value':typ}
 				else:
 					target = {}
 			if(target and target['name'] != None):
@@ -293,21 +351,38 @@ class RubyASTTranslator:
 			return [self.translate_simple_value(lv[2]),self.translate_simple_value(lv[1]),self.translate_simple_value(['int','1'])]
 		elif(lv[0] == "send" and fr == "for_statement"):
 			return self.translate_assign(lv[4][1][2])
+		elif(lv[0] == "send"):
+			return self.translate_send(lv)
+		else:
+			print("xx")
+			print(lv)
+	def translate_args(self,lv):
+		for arg in lv:
 			
 	def translate_lvsagn(self,lv):
+		if lv[0] in self.keyword:
+			self.keyword[lv[0]] = self.keyword[lv[0]] + 1
+		else:
+			self.keyword[lv[0]] = 0
 		if(lv[0] == "begin"):
 			i = 1
 			while i<len(lv):
 				self.translate_lvsagn(lv[i])
 				i = i + 1
 			return
+		elif(lv[0]== "def"):
+			print(lv)
+			print("yeah")
+			params = lv[3]
+			name = lv[2]
+			self.definitions.append({'params':params,'name':name,'pseudo_type':['Function',None],'return_type':None,'type':'function_definition','block':self.translate_assign(lv[4])})
 		elif(lv[0] == "lvasgn"):
 			name = lv[2]
 			l_type = lv[3]
 			if(l_type[0] in BUILTIN_TYPES or l_type[0] == "send"):
 				ty = l_type[0]
 			else:
-				return "Type not recognized"
+				raise type_check_error("Type not recognized")
 			typ = self.translate_value(l_type)
 			if(ty in BUILTIN_SIMPLE_TYPES):
 				target = {'name':name, 'pseudo_type':BUILTIN_TYPES[ty],'type':'local'}
@@ -330,7 +405,7 @@ class RubyASTTranslator:
 		elif(lv[0] == 'for'):
 			self.main.append(self.translate_value(lv))
 		else:
-			return "Not an assignment bloc"
+			raise type_check_error("Not an assignment bloc")
 	
 	def Test(self,name):
 		self.translate()
@@ -347,7 +422,7 @@ class RubyASTTranslator:
 			source_loc = fi.read()
 		self.source_loc = ast.literal_eval(source_loc)
 		rast = ast_source.replace('\n','')
-		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!=' | 'push' | '[' | ']' | 'Array' | 'new' | 'const' | 'length' | 'nil' | '[]' | '*'
+		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!=' | 'push' | '[' | ']' | 'Array' | 'new' | 'const' | 'length' | 'nil' | '[]' | '*' | 'def'
 		parenth = pyparsing.nestedExpr('(',')', content = content_ast)
 		
 		res = parenth.parseString(rast)

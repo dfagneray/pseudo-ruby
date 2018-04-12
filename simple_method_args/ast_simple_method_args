@@ -1,10 +1,9 @@
 (def :a
-  (args)
+  (args
+    (arg :c))
   (begin
     (lvasgn :b
       (int 2))
-    (lvasgn :c
-      (int 3))
     (lvasgn :d
       (send
         (lvar :b) :+
