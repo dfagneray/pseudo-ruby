@@ -5,7 +5,7 @@ import yaml
 import ruby_ast_translator
 from Naked.toolshed.shell import execute_rb,muterun_rb
 from subprocess import call
-name = ["simple",
+name = [	"simple",
 		"simple_op",
 		"simple_list",
 		"simple_hash",
@@ -19,10 +19,9 @@ name = ["simple",
 		"simple_method_ret",
 		"simple_class"]
 
-#python3 -c 'import ruby_ast_translator; r = ruby_ast_translator.RubyASTTranslator(); r.Test()'
 s = 0
 for n in name:
-	name_ast = n+"/parser_"+ n	+".rb"
+	name_ast = n+"/parser_"+ n+".rb"
 	r_ast = open(name_ast,"w")
 	r_ast.write("require 'parser/current'\n")
 	r_ast.write("require 'ast'\n")
