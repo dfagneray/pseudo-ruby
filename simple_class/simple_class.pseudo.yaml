@@ -1,0 +1,50 @@
+constants: []
+custom_exceptions: []
+definitions:
+- attrs:
+  - {is_public: false, name: y, pseudo_type: Int, type: class_attr}
+  base: null
+  constructor:
+    block:
+    - pseudo_type: Void
+      target: {name: y, pseudo_type: Int, type: instance_variable}
+      type: assignment
+      value: {name: y, pseudo_type: Int, type: local}
+    name: __init__
+    params:
+    - {name: y, pseudo_type: Int, type: local}
+    pseudo_type: [Function, Int, A]
+    return_type: Void
+    this: {name: A, type: typename}
+    type: constructor
+  methods:
+  - block:
+    - pseudo_type: Void
+      target: {name: c, pseudo_type: Int, type: local}
+      type: assignment
+      value: {pseudo_type: Int, type: int, value: 2}
+    - pseudo_type: Int
+      type: implicit_return
+      value: {name: c, pseudo_type: Int, type: local}
+    is_public: true
+    name: b
+    params:
+    - {name: x, pseudo_type: Int, type: local}
+    pseudo_type: [Function, Int, Int]
+    return_type: Int
+    this: {name: A, type: typename}
+    type: method_definition
+  name: A
+  type: class_definition
+dependencies: []
+main:
+- pseudo_type: Void
+  target: {name: a, pseudo_type: A, type: local}
+  type: assignment
+  value:
+    args:
+    - {pseudo_type: Int, type: int, value: 2}
+    class_name: A
+    pseudo_type: A
+    type: new_instance
+type: module

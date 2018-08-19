@@ -3,7 +3,8 @@ import sys
 import ast
 import yaml
 import pyparsing
-from errors import PseudoRubyNotTranslatableError, PseudoRubyTypeCheckError, cant_infer_error, translation_error, type_check_error
+import re
+import errors
 
 #python3 -c 'import ruby_ast_translator; r = ruby_ast_translator.RubyASTTranslator(); r.Test()'
 
@@ -154,6 +155,7 @@ class RubyASTTranslator:
 	def translate_nested_value(self,value):		
 		if(value[0] == 'array'):
 			if(len(value) == 1):
+				print(self.source_loc)
 				loc = ast.literal_eval(self.source_loc[value[0]][self.keyword[value[0]]])
 				meta = self.lines[loc[0]-2]
 				if(meta[:6] == '#META:'):
@@ -353,29 +355,83 @@ class RubyASTTranslator:
 			return self.translate_assign(lv[4][1][2])
 		elif(lv[0] == "send"):
 			return self.translate_send(lv)
+		elif(lv[0] == "return"):
+			return self.translate_return(lv)
 		else:
 			print("xx")
 			print(lv)
+	
+	def translate_return(self,lv):
+		val = self.ass_store[lv[1][2]]
+		return {'pseudo_type':val['pseudo_type'],'type':'implicit_return','value':val}
+	
+	def translate_kwoptarg(self,lv):
+		arg = {'name':lv[2],'pseudo_type':BUILTIN_TYPES[lv[3][3]],'type':'local'}
+		self.ass_store[lv[2]] = arg
+		return arg	
+	
 	def translate_args(self,lv):
-		for arg in lv:
+		args = []
+		if len(lv) > 1:
+			i = 1
+			while i<len(lv):
+				if(lv[i][0] == "kwoptarg"):
+					args.append(self.translate_kwoptarg(lv[i]))
+				i = i + 1
+		return args
 			
-	def translate_lvsagn(self,lv):
+	def translate_lvsagn(self,lv,options=None):
+		print("----")
+		print(lv)
 		if lv[0] in self.keyword:
 			self.keyword[lv[0]] = self.keyword[lv[0]] + 1
 		else:
 			self.keyword[lv[0]] = 0
 		if(lv[0] == "begin"):
 			i = 1
+			res = []
 			while i<len(lv):
-				self.translate_lvsagn(lv[i])
+				res.append(self.translate_lvsagn(lv[i],options))
 				i = i + 1
-			return
-		elif(lv[0]== "def"):
+			return res
+		elif(lv[0]=="class"):
+			print("class")
 			print(lv)
-			print("yeah")
-			params = lv[3]
+			name = lv[1][3]
+			methods = self.translate_lvsagn(lv[3],name)
+			cons = None
+			meth = []
+			for m in methods:
+				if m['type'] == 'constructor':
+					cons = m
+				elif m['type'] == 'function_definition':
+					meth.append(m)
+			self.definitions.append({'attrs':None,'name':name,'base':None,'constructor':cons,'methods':meth,'type':'class_definition'})
+		elif(lv[0]== "def"):
 			name = lv[2]
-			self.definitions.append({'params':params,'name':name,'pseudo_type':['Function',None],'return_type':None,'type':'function_definition','block':self.translate_assign(lv[4])})
+			print("DEF")
+			print(name)
+			r_t = 'Void'
+			#self.func_store[{'name':name,'return_type':r_t}]
+			params = self.translate_args(lv[3])
+			print(params)
+			#print(self.ass_store[lv[-1][-1][1][2]])
+			p_t = ['Function']
+			for p in params:
+				p_t.append(p['pseudo_type'])
+			block = self.translate_assign(lv[4],options)
+			if(name != 'initialize' and block[-1]['type']):
+				r_t = block[-1]['pseudo_type']
+			p_t.append(r_t)
+			if not p_t:
+				p_t = 'Void'
+			if (name == 'initialize'):
+				print('initialize')
+				return {'name':'__init__','block':None,'params':None,'return_type':r_t,'pseudo_type':'Void','this':{'name':options,'type':'typename'},'type':'constructor'}
+			if options:
+				return {'params':params,'name':name,'pseudo_type':p_t,'return_type':r_t,'type':'function_definition','block':block,'this':{'name':options,'type':'typename'},'is_public':False}
+			else:
+				self.definitions.append({'params':params,'name':name,'pseudo_type':p_t,'return_type':r_t,'type':'function_definition','block':block})
 		elif(lv[0] == "lvasgn"):
 			name = lv[2]
 			l_type = lv[3]
@@ -405,7 +461,7 @@ class RubyASTTranslator:
 		elif(lv[0] == 'for'):
 			self.main.append(self.translate_value(lv))
 		else:
-			raise type_check_error("Not an assignment bloc")
+			raise errors.type_check_error("Not an assignment bloc")
 	
 	def Test(self,name):
 		self.translate()
@@ -422,11 +478,13 @@ class RubyASTTranslator:
 			source_loc = fi.read()
 		self.source_loc = ast.literal_eval(source_loc)
 		rast = ast_source.replace('\n','')
-		content_ast = pyparsing.Word(pyparsing.alphanums) | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!=' | 'push' | '[' | ']' | 'Array' | 'new' | 'const' | 'length' | 'nil' | '[]' | '*' | 'def'
-		parenth = pyparsing.nestedExpr('(',')', content = content_ast)
-		
+		content_ast = pyparsing.Word(pyparsing.alphanums) | 'ivasgn' | 'class' | 'lvasgn' | ':' | 'int' | 'float' | 'begin' | 'array' | 'hash' | '-' | '+' | '/' | 'div' | '^' | '%' | '<' | '>' | '==' | '<=' | '>=' | '!=' | 'push' | '[' | ']' | 'Array' | 'new' | 'const' | 'length' | 'nil' | '[]' | '*' | 'def' | '{' | '}' | '{}' | '@'
+		print(content_ast)
+		parenth = pyparsing.nestedExpr(opener ='(',closer =')', content = content_ast)
 		res = parenth.parseString(rast)
 		res = res.asList()
+		print("res")
+		print(res)
 		self.main = []
 		self.translate_lvsagn(res[0])
 		print(self.main)

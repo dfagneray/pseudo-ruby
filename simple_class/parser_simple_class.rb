@@ -67,15 +67,16 @@ browse_acc(node,res,-1,-1)
 return res
 end
 cur_folder = __dir__
-f ="/simple.rb"
+f ="/simple_class.rb"
 path = cur_folder + f
 code = File.read(path)
 ast = Parser::CurrentRuby.parse(code)
 res = browse(ast)
+print(res)
 res = flatten_hash(res).to_s.gsub! '=>',':'
-map_ast_simple = File.new(cur_folder+"/map_source_simple","w")
-map_ast_simple.write(res)
-map_ast_simple.close
-ast_simple= File.new(cur_folder+"/ast_simple","w")
-ast_simple.write(ast)
-ast_simple.close
+map_ast_simple_class = File.new(cur_folder+"/map_source_simple_class","w")
+map_ast_simple_class.write(res)
+map_ast_simple_class.close
+ast_simple_class= File.new(cur_folder+"/ast_simple_class","w")
+ast_simple_class.write(ast)
+ast_simple_class.close

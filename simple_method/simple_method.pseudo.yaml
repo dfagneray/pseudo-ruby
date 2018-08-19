@@ -21,8 +21,8 @@ definitions:
       type: binary_op
   name: a
   params: []
-  pseudo_type: [Function, null]
-  return_type: null
+  pseudo_type: [Function, Void]
+  return_type: Void
   type: function_definition
 dependencies: []
 main: []

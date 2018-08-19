@@ -1,0 +1,21 @@
+(begin
+  (class
+    (const nil :Shape) nil
+    (begin
+      (def :initialize
+        (args
+          (arg :a)
+          (arg :name))
+        (begin
+          (ivasgn :@a
+            (lvar :a))
+          (ivasgn :@name
+            (lvar :name))))
+      (def :area
+        (args)
+        (ivar :@a))))
+  (lvasgn :s
+    (send
+      (const nil :Shape) :new
+      (int 0)
+      (str "s"))))

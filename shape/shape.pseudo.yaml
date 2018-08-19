@@ -1,0 +1,52 @@
+constants: []
+custom_exceptions: []
+definitions:
+- attrs:
+  - {is_public: false, name: a, pseudo_type: Int, type: class_attr}
+  - {is_public: false, name: __name, pseudo_type: String, type: class_attr}
+  base: null
+  constructor:
+    block:
+    - pseudo_type: Void
+      target: {name: a, pseudo_type: Int, type: instance_variable}
+      type: assignment
+      value: {name: a, pseudo_type: Int, type: local}
+    - pseudo_type: Void
+      target: {name: __name, pseudo_type: String, type: instance_variable}
+      type: assignment
+      value: {name: name, pseudo_type: String, type: local}
+    name: __init__
+    params:
+    - {name: a, pseudo_type: Int, type: local}
+    - {name: name, pseudo_type: String, type: local}
+    pseudo_type: [Function, Int, String, Shape]
+    return_type: Void
+    this: {name: Shape, type: typename}
+    type: constructor
+  methods:
+  - block:
+    - pseudo_type: Int
+      type: implicit_return
+      value: {name: a, pseudo_type: Int, type: instance_variable}
+    is_public: true
+    name: area
+    params: []
+    pseudo_type: [Function, Int]
+    return_type: Int
+    this: {name: Shape, type: typename}
+    type: method_definition
+  name: Shape
+  type: class_definition
+dependencies: []
+main:
+- pseudo_type: Void
+  target: {name: s, pseudo_type: Shape, type: local}
+  type: assignment
+  value:
+    args:
+    - {pseudo_type: Int, type: int, value: 0}
+    - {pseudo_type: String, type: string, value: s}
+    class_name: Shape
+    pseudo_type: Shape
+    type: new_instance
+type: module

@@ -15,13 +15,16 @@ definitions:
       pseudo_type: Int
       right: {name: c, pseudo_type: Int, type: local}
       type: binary_op
+  - pseudo_type: Int
+    type: implicit_return
+    value: {name: d, pseudo_type: Int, type: local}
   name: a
   params:
   - {name: c, pseudo_type: Int, type: local}
   - {name: e, pseudo_type: String, type: local}
   - {name: f, pseudo_type: Float, type: local}
-  pseudo_type: [Function, Int, String, Float, Void]
-  return_type: Void
+  pseudo_type: [Function, Int, String, Float, Int]
+  return_type: Int
   type: function_definition
 dependencies: []
 main: []

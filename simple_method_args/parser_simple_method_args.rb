@@ -39,8 +39,7 @@ temp = temp.delete(')')
 node.children.each do |n|
 child = n.to_s
 child = child.delete(' ')
-child = child.delete("
-")
+child = child.delete("\n")
 child = child.delete('(')
 child = child.delete(')')
 	temp.slice!(child)
@@ -49,7 +48,7 @@ res[temp] = res[temp] = "("+node.loc.line.to_s+","+node.loc.column.to_s+")"
 browse_acc(node.children,res,node.loc.line,node.loc.column)
 elsif (node.class == Array)
 node.each do |n|
-if n.class == Parser::AST::Node && n.loc.class != Parser::Source::Map::Collection
+if n.class == Parser::AST::Node && n.loc.expression != nil
 		temp = {}
 browse_acc(n,temp,n.loc.line,n.loc.column)
 res[temp] = "("+n.loc.line.to_s+","+n.loc.column.to_s+")"

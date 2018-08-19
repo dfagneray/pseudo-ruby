@@ -67,15 +67,15 @@ browse_acc(node,res,-1,-1)
 return res
 end
 cur_folder = __dir__
-f ="/simple.rb"
+f ="/shape.rb"
 path = cur_folder + f
 code = File.read(path)
 ast = Parser::CurrentRuby.parse(code)
 res = browse(ast)
 res = flatten_hash(res).to_s.gsub! '=>',':'
-map_ast_simple = File.new(cur_folder+"/map_source_simple","w")
-map_ast_simple.write(res)
-map_ast_simple.close
-ast_simple= File.new(cur_folder+"/ast_simple","w")
-ast_simple.write(ast)
-ast_simple.close
+map_ast_shape = File.new(cur_folder+"/map_source_shape","w")
+map_ast_shape.write(res)
+map_ast_shape.close
+ast_shape= File.new(cur_folder+"/ast_shape","w")
+ast_shape.write(ast)
+ast_shape.close

@@ -12,4 +12,6 @@
     (lvasgn :d
       (send
         (lvar :b) :+
-        (lvar :c)))))
+        (lvar :c)))
+    (return
+      (lvar :d))))

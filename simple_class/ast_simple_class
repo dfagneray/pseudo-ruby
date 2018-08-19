@@ -1,0 +1,16 @@
+(class
+  (const nil :A) nil
+  (begin
+    (def :initialize
+      (args
+        (arg :y))
+      (ivasgn :@y
+        (lvar :y)))
+    (def :b
+      (args
+        (arg :x))
+      (begin
+        (lvasgn :c
+          (int 2))
+        (return
+          (lvar :c))))))
